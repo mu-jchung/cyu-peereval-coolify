@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Welcome, {{ user.name }}!</h2>
+    
+    <div class="assignments-section">
+        <h3>Your Assignments</h3>
+        
+        {% if assignments %}
+            <div class="assignments-grid">
+                {% for item in assignments %}
+                <div class="assignment-card">
+                    <h4>{{ item.assignment.name }}</h4>
+                    <p class="class-name">{{ item.class.name }}</p>
+                    <p class="group-info">Group: {{ item.group.name }}</p>
+                    {% if item.assignment.description %}
+                    <p class="assignment-desc">{{ item.assignment.description }}</p>
+                    {% endif %}
+                    {% if item.assignment.due_date %}
+                    <p class="due-date">Due: {{ item.assignment.due_date.strftime('%B %d, %Y') }}</p>
+                    {% endif %}
+                    
+                    <div class="assignment-actions">
+                        {% if item.submitted %}
+                            <span class="status-badge submitted">Submitted</span>
+                        {% else %}
+                            <a href="{{ url_for('submit_feedback', assignment_id=item.assignment.id) }}" class="btn btn-primary">Submit Feedback</a>
+                        {% endif %}
+                        
+                        {% if item.assignment.results_released %}
+                            <a href="{{ url_for('view_results', assignment_id=item.assignment.id) }}" class="btn btn-secondary">View Results</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-data">No assignments yet. Check back later!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

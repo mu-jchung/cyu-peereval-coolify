@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback Results{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <h2>{{ assignment.name }} - Feedback Results</h2>
+    <p class="subtitle">Group: {{ group.name }}</p>
+    
+    <div class="results-section">
+        <h3>Group Feedback</h3>
+        {% if group_feedback %}
+            {% for feedback in group_feedback %}
+            <div class="feedback-item">
+                <p class="feedback-label">Peer Feedback:</p>
+                <p class="feedback-content">{{ feedback }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">No group feedback received.</p>
+        {% endif %}
+    </div>
+    
+    <div class="results-section">
+        <h3>Individual Feedback for You</h3>
+        {% if individual_feedback %}
+            {% for feedback in individual_feedback %}
+            <div class="feedback-item">
+                <p class="feedback-label">Peer Feedback:</p>
+                <p class="feedback-content">{{ feedback }}</p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-data">No individual feedback received.</p>
+        {% endif %}
+    </div>
+    
+    {% if teacher_notes %}
+    <div class="results-section">
+        <h3>Teacher Comments</h3>
+        {% for note in teacher_notes %}
+        <div class="feedback-item teacher-note">
+            <p class="feedback-label">Teacher Note:</p>
+            <p class="feedback-content">{{ note.note }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="form-actions">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

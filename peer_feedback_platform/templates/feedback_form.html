@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Feedback{% endblock %}
+
+{% block content %}
+<div class="feedback-form-container">
+    <h2>{{ assignment.name }}</h2>
+    <p class="subtitle">{{ assignment.cls.name }} - Providing Feedback for: {{ presenting_group.name }}</p>
+    
+    <form method="POST" action="{{ url_for('submit_feedback', assignment_id=assignment.id) }}" id="feedbackForm">
+        <div class="feedback-section">
+            <h3>{{ presenting_group.name }} Feedback</h3>
+            
+            <div class="form-group">
+                <label for="group_feedback">Overall Group Feedback</label>
+                <textarea id="group_feedback" 
+                          name="group_feedback" 
+                          rows="4" 
+                          placeholder="Provide feedback about the group's overall presentation..."
+                          required></textarea>
+            </div>
+            
+            <h4>Individual Member Feedback</h4>
+            <div class="members-feedback">
+                {% for member in members %}
+                <div class="form-group">
+                    <label for="member_{{ member.id }}">{{ member.name }}</label>
+                    <textarea id="member_{{ member.id }}" 
+                              name="member_{{ member.id }}" 
+                              rows="3" 
+                              placeholder="Provide feedback for {{ member.name }}..."></textarea>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">Submit Feedback</button>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

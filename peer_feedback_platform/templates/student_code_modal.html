@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Student Code - {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="student-code-container">
+    <div class="student-code-box">
+        <h2>Student Login Information</h2>
+        
+        <div class="student-info">
+            <div class="info-item">
+                <label>Name:</label>
+                <p>{{ student.name }}</p>
+            </div>
+            
+            <div class="info-item">
+                <label>Email:</label>
+                <p>{{ student.email }}</p>
+            </div>
+            
+            <div class="info-item">
+                <label>Student Code:</label>
+                <div class="code-display">
+                    <input type="text" readonly value="{{ student.student_code }}" id="codeInput" class="code-input">
+                    <button onclick="copyToClipboard()" class="btn btn-primary btn-small">Copy Code</button>
+                </div>
+            </div>
+            
+            <div class="info-note">
+                <p><strong>Note:</strong> This student can use their code instead of their email to login.</p>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <a href="{{ url_for('view_class', class_id=class_id) }}" class="btn btn-secondary">Back to Class</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const codeInput = document.getElementById('codeInput');
+    codeInput.select();
+    document.execCommand('copy');
+    alert('Student code copied to clipboard!');
+}
+</script>
+
+<style>
+.student-code-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.student-code-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+}
+
+.student-code-box h2 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+}
+
+.student-info {
+    margin-bottom: 2rem;
+}
+
+.info-item {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.info-item label {
+    display: block;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.info-item p {
+    margin: 0;
+    color: #555;
+    font-size: 1rem;
+}
+
+.code-display {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.code-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #3498db;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+.info-note {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #e8f4f8;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+}
+
+.info-note p {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+</style>
+{% endblock %}

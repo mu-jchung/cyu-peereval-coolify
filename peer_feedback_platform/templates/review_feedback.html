@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Review Feedback - {{ assignment.name }}{% endblock %}
+
+{% block content %}
+<div class="review-container">
+    <div class="review-header">
+        <h2>{{ assignment.name }} - Feedback Review</h2>
+        {% if not assignment.results_released %}
+        <form method="POST" action="{{ url_for('release_results', assignment_id=assignment.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to release results to students?')">
+                Release Results to Students
+            </button>
+        </form>
+        {% else %}
+        <span class="status-badge released">Results Released</span>
+        {% endif %}
+    </div>
+    
+    <div class="review-tabs">
+        <button class="tab-btn active" data-tab="all-feedback">All Feedback</button>
+        <button class="tab-btn" data-tab="teacher-notes">Teacher Notes</button>
+    </div>
+    
+    <div class="tab-content active" id="all-feedback-tab">
+        <h3>All Submitted Feedback</h3>
+        
+        {% if feedback_data %}
+            <div class="feedback-filter">
+                <label for="filterGroup">Filter by Target Group:</label>
+                <select id="filterGroup" onchange="filterFeedback()">
+                    <option value="">All Groups</option>
+                </select>
+            </div>
+            
+            <table class="data-table feedback-table">
+                <thead>
+                    <tr>
+                        <th>From Student</th>
+                        <th>Target Group</th>
+                        <th>Target</th>
+                        <th>Type</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    {% for item in feedback_data %}
+                    <tr data-target-group="{{ item.presenting_group }}">
+                        <td>{{ item.evaluator }}</td>
+                        <td>{{ item.presenting_group }}</td>
+                        <td>{{ item.target }}</td>
+                        <td><span class="type-badge {{ item.type }}">{{ item.type }}</span></td>
+                        <td class="feedback-cell">{{ item.content }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="no-data">No feedback submitted yet.</p>
+        {% endif %}
+    </div>
+    
+    <div class="tab-content" id="teacher-notes-tab">
+        <h3>Add Teacher Notes for Students</h3>
+        <p class="subtitle">These notes will be visible to students when results are released.</p>
+        
+        {% if students %}
+            <div class="teacher-notes-section">
+                {% for student in students %}
+                <div class="student-note-card">
+                    <h4>{{ student.name }}</h4>
+                    <p class="student-group">Group: {{ student.group }}</p>
+                    <form class="note-form" data-student-id="{{ student.id }}">
+                        <textarea 
+                            id="note_{{ student.id }}" 
+                            rows="4" 
+                            placeholder="Enter teacher comments for {{ student.name }}..."
+                            >{% if notes_dict.get(student.id) %}{{ notes_dict[student.id] }}{% endif %}</textarea>
+                        <button type="submit" class="btn btn-primary">Save Note</button>
+                        <span class="save-status" id="status_{{ student.id }}"></span>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-data">No students found.</p>
+        {% endif %}
+    </div>
+    
+    <div class="form-actions">
+        <a href="{{ url_for('view_class', class_id=assignment.class_id) }}" class="btn btn-secondary">Back to Class</a>
+    </div>
+</div>
+
+<script>
+const assignmentId = {{ assignment.id }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const targetGroups = new Set();
+    document.querySelectorAll('[data-target-group]').forEach(row => {
+        targetGroups.add(row.dataset.targetGroup);
+    });
+    
+    const filterSelect = document.getElementById('filterGroup');
+    if (filterSelect) {
+        targetGroups.forEach(group => {
+            const option = document.createElement('option');
+            option.value = group;
+            option.textContent = group;
+            filterSelect.appendChild(option);
+        });
+    }
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+    });
+    
+    document.querySelectorAll('.note-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = this.dataset.studentId;
+            const noteContent = document.getElementById(`note_${studentId}`).value;
+            const statusEl = document.getElementById(`status_${studentId}`);
+            
+            try {
+                const response = await fetch(`/teacher/assignment/${assignmentId}/add_note`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `student_id=${studentId}&note=${encodeURIComponent(noteContent)}`
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    statusEl.textContent = 'Saved!';
+                    statusEl.className = 'save-status success';
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 2000);
+                } else {
+                    statusEl.textContent = 'Error saving';
+                    statusEl.className = 'save-status error';
+                }
+            } catch (error) {
+                statusEl.textContent = 'Error saving';
+                statusEl.className = 'save-status error';
+            }
+        });
+    });
+});
+
+function filterFeedback() {
+    const filterValue = document.getElementById('filterGroup').value;
+    const rows = document.querySelectorAll('#feedbackTableBody tr');
+    
+    rows.forEach(row => {
+        if (filterValue === '' || row.dataset.targetGroup === filterValue) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

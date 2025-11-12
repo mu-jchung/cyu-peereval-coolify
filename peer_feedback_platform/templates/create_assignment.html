@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Create Assignment for {{ cls.name }}</h2>
+    
+    <form method="POST" action="{{ url_for('create_assignment', class_id=cls.id) }}">
+        <div class="form-group">
+            <label for="name">Assignment Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="due_date">Due Date</label>
+            <input type="date" id="due_date" name="due_date">
+        </div>
+        
+        <div class="form-group">
+            <label>Select Groups</label>
+            <div class="checkbox-group">
+                {% for group in groups %}
+                <label class="checkbox-label">
+                    <input type="checkbox" name="group_ids" value="{{ group.id }}">
+                    {{ group.name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Assignment</button>
+            <a href="{{ url_for('view_class', class_id=cls.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Assignment - {{ assignment.name }}{% endblock %}
+
+{% block content %}
+<div class="assignment-management">
+    <h2>{{ assignment.name }}</h2>
+    <p class="subtitle">{{ cls.name }} - Manage Presentations</p>
+    
+    <form method="POST" class="management-form">
+        <div class="form-group">
+            <label for="is_active">
+                <input type="checkbox" id="is_active" name="is_active" {% if assignment.is_active %}checked{% endif %}>
+                Assignment is Active (students can submit feedback)
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label for="presenting_group_id">Select Presenting Group:</label>
+            <select id="presenting_group_id" name="presenting_group_id" required>
+                <option value="">-- Choose a group --</option>
+                {% for group in groups %}
+                <option value="{{ group.id }}" {% if assignment.presenting_group_id == group.id %}selected{% endif %}>
+                    {{ group.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Assignment</button>
+            <a href="{{ url_for('view_class', class_id=cls.id) }}" class="btn btn-secondary">Back to Class</a>
+        </div>
+    </form>
+    
+    {% if assignment.presenting_group %}
+    <div class="presenting-info">
+        <h3>Currently Presenting</h3>
+        <div class="info-box">
+            <p><strong>Group:</strong> {{ assignment.presenting_group.name }}</p>
+            <p><strong>Status:</strong> 
+                {% if assignment.is_active %}
+                    <span class="status-badge active">Active - Students can submit feedback</span>
+                {% else %}
+                    <span class="status-badge inactive">Inactive - No feedback submissions</span>
+                {% endif %}
+            </p>
+            
+            <h4>Group Members:</h4>
+            <ul>
+                {% for member in presenting_group_members %}
+                    <li>{{ member.name }} ({{ member.email }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.assignment-management {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.assignment-management h2 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.assignment-management .subtitle {
+    color: #7f8c8d;
+    margin-bottom: 2rem;
+}
+
+.management-form {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #e1e8ed;
+}
+
+.management-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.management-form label {
+    display: block;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.management-form input[type="checkbox"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.management-form select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.presenting-info {
+    margin-top: 2rem;
+}
+
+.presenting-info h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+.info-box {
+    background: #f0f8ff;
+    padding: 1.5rem;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+}
+
+.info-box p {
+    margin: 0.5rem 0;
+}
+
+.info-box strong {
+    color: #2c3e50;
+}
+
+.info-box h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.info-box ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.info-box li {
+    padding: 0.5rem;
+    background: white;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+    color: #555;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+</style>
+{% endblock %}
