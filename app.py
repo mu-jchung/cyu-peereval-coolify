@@ -746,9 +746,20 @@ def update_assignment(assignment_id):
 @teacher_required
 def generate_access_link(class_id):
     try:
+        data = request.get_json() or {}
+        hours = data.get('hours', 2)  # Default to 2 hours
+        
+        # Validate hours (must be between 0.1 and 24 hours)
+        try:
+            hours = float(hours)
+            if hours <= 0 or hours > 24:
+                return jsonify({'error': 'Hours must be between 0.1 and 24'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid hours value'}), 400
+        
         token = secrets.token_urlsafe(32)
-        # Link expires in 4 hours
-        expires_at = get_est_now() + timedelta(hours=4)
+        # Link expires in specified hours (default 2 hours)
+        expires_at = get_est_now() + timedelta(hours=hours)
         
         supabase.table('access_tokens').insert({
             'token': token,
@@ -758,7 +769,7 @@ def generate_access_link(class_id):
         }).execute()
         
         link = url_for('join_class', token=token, _external=True)
-        return jsonify({'success': True, 'link': link, 'expires_at': expires_at.isoformat()})
+        return jsonify({'success': True, 'link': link, 'expires_at': expires_at.isoformat(), 'hours': hours})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -894,55 +905,74 @@ def join_class(token):
                     }).execute()
                     guests_team = team_response.data[0]
                 
-                # Get unique name for guest
-                unique_name = get_unique_student_name(student_name, guests_team['id'])
+                # Check if student with this exact name already exists in this team
+                existing_student_response = supabase.table('students').select('*').eq('name', student_name).eq('team_id', guests_team['id']).execute()
                 
-                # Create guest student account with class name as passcode
-                student_response = supabase.table('students').insert({
-                    'name': unique_name,
-                    'student_id': '',  # No student ID for guests
-                    'passcode': generate_password_hash(class_name, method='pbkdf2'),  # Hash the class name as passcode
-                    'team_id': guests_team['id'],
-                    'class_id': class_id,
-                    'is_pre_added': False,
-                    'access_expires_at': expires_at.isoformat(), # Set access expiration
-                    'device_token': device_token, # Set device token
-                    'created_at': get_est_now().isoformat()
-                }).execute()
-                
-                student = student_response.data[0]
-                team_id = guests_team['id']
-            else:
-                # Student join
-                # Check if student was pre-added by teacher
-                pre_added_response = supabase.table('students').select('*').eq('student_id', student_id).eq('team_id', team_id).eq('is_pre_added', True).execute()
-                
-                if pre_added_response.data and len(pre_added_response.data) > 0:
-                    # Student was pre-added by teacher, update their name
-                    student = pre_added_response.data[0]
-                    # Get unique name for student
-                    unique_name = get_unique_student_name(student_name, team_id)
+                if existing_student_response.data and len(existing_student_response.data) > 0:
+                    # Student with this name already exists - log them in directly
+                    student = existing_student_response.data[0]
+                    # Update their access expiration and device token
                     supabase.table('students').update({
-                        'name': unique_name,
                         'access_expires_at': expires_at.isoformat(),
                         'device_token': device_token
                     }).eq('id', student['id']).execute()
+                    student['device_token'] = device_token
                 else:
-                    # New student: create account with SID as passcode
-                    # Get unique name for student
-                    unique_name = get_unique_student_name(student_name, team_id)
+                    # New guest - create account
                     student_response = supabase.table('students').insert({
-                        'name': unique_name,
-                        'student_id': student_id,
-                        'passcode': generate_password_hash(student_id, method='pbkdf2'),  # Hash the student ID used as passcode
-                        'team_id': team_id,
+                        'name': student_name,
+                        'student_id': '',  # No student ID for guests
+                        'passcode': generate_password_hash(class_name, method='pbkdf2'),  # Hash the class name as passcode
+                        'team_id': guests_team['id'],
                         'class_id': class_id,
                         'is_pre_added': False,
                         'access_expires_at': expires_at.isoformat(), # Set access expiration
                         'device_token': device_token, # Set device token
                         'created_at': get_est_now().isoformat()
                     }).execute()
+                    
                     student = student_response.data[0]
+                team_id = guests_team['id']
+            else:
+                # Student join
+                # First check if student with this name already exists in this team
+                existing_student_response = supabase.table('students').select('*').eq('name', student_name).eq('team_id', team_id).execute()
+                
+                if existing_student_response.data and len(existing_student_response.data) > 0:
+                    # Student with this name already exists - log them in directly
+                    student = existing_student_response.data[0]
+                    # Update their access expiration and device token
+                    supabase.table('students').update({
+                        'access_expires_at': expires_at.isoformat(),
+                        'device_token': device_token
+                    }).eq('id', student['id']).execute()
+                    student['device_token'] = device_token
+                else:
+                    # Check if student was pre-added by teacher
+                    pre_added_response = supabase.table('students').select('*').eq('student_id', student_id).eq('team_id', team_id).eq('is_pre_added', True).execute()
+                    
+                    if pre_added_response.data and len(pre_added_response.data) > 0:
+                        # Student was pre-added by teacher, update their name
+                        student = pre_added_response.data[0]
+                        supabase.table('students').update({
+                            'name': student_name,
+                            'access_expires_at': expires_at.isoformat(),
+                            'device_token': device_token
+                        }).eq('id', student['id']).execute()
+                    else:
+                        # New student: create account with SID as passcode
+                        student_response = supabase.table('students').insert({
+                            'name': student_name,
+                            'student_id': student_id,
+                            'passcode': generate_password_hash(student_id, method='pbkdf2'),  # Hash the student ID used as passcode
+                            'team_id': team_id,
+                            'class_id': class_id,
+                            'is_pre_added': False,
+                            'access_expires_at': expires_at.isoformat(), # Set access expiration
+                            'device_token': device_token, # Set device token
+                            'created_at': get_est_now().isoformat()
+                        }).execute()
+                        student = student_response.data[0]
             
             # Create session
             session['user_id'] = student['id']

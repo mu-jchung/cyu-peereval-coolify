@@ -302,16 +302,27 @@ async function generateAccessLink() {
         return;
     }
     
+    const hoursInput = document.getElementById('linkExpirationHours');
+    const hours = parseFloat(hoursInput.value) || 2;
+    
+    // Validate hours
+    if (hours <= 0 || hours > 24) {
+        showToast('Hours must be between 0.1 and 24', 'error');
+        return;
+    }
+    
     try {
-        const result = await apiCall(`/api/classes/${currentClassId}/access-link`, 'POST');
+        const result = await apiCall(`/api/classes/${currentClassId}/access-link`, 'POST', { hours });
         
         document.getElementById('accessLink').value = result.link;
         document.getElementById('linkExpires').textContent = formatDate(result.expires_at);
         document.getElementById('accessLinkDisplay').style.display = 'block';
         
-        showToast('Access link generated (valid for 10 minutes)', 'success');
+        const hoursText = hours === 1 ? '1 hour' : `${hours} hours`;
+        showToast(`Access link generated (valid for ${hoursText})`, 'success');
     } catch (error) {
         console.error('Failed to generate access link:', error);
+        showToast('Error generating access link', 'error');
     }
 }
 

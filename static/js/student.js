@@ -120,8 +120,11 @@ function renderAssignments() {
 async function loadTeams() {
     try {
         const result = await apiCall('/api/student/teams');
+        console.log('Loaded teams:', result);
         teams = result.teams;
         myTeamId = result.my_team_id;
+        console.log('Teams array:', teams);
+        console.log('My team ID:', myTeamId);
         renderTeams();
     } catch (error) {
         console.error('Failed to load teams:', error);
@@ -130,6 +133,8 @@ async function loadTeams() {
 
 function renderTeams() {
     const teamsList = document.getElementById('teamsList');
+    console.log('Rendering teams. Count:', teams.length);
+    console.log('Current user name:', window.currentUserName);
     
     if (teams.length === 0) {
         teamsList.innerHTML = '<p>No teams in this class yet.</p>';
@@ -141,12 +146,16 @@ function renderTeams() {
             <h4>${team.name}</h4>
             <div class="team-members">
                 ${team.students && team.students.length > 0 ? 
-                    team.students.map(s => `<p class="member-item">• ${s.name}</p>`).join('') :
+                    team.students.map(s => {
+                        const isCurrentUser = s.name === window.currentUserName;
+                        return `<p class="member-item ${isCurrentUser ? 'current-user' : ''}">• ${s.name}${isCurrentUser ? ' (You)' : ''}</p>`;
+                    }).join('') :
                     '<p>No members yet</p>'
                 }
             </div>
         </div>
     `).join('');
+    console.log('Teams rendered successfully');
 }
 
 // Evaluation
@@ -267,9 +276,11 @@ async function updateMembersList() {
     evaluationContent.style.display = 'block';
     
     const memberEvaluations = document.getElementById('memberEvaluations');
-    memberEvaluations.innerHTML = team.students.map(student => `
-        <div class="member-evaluation">
-            <h4>${student.name}</h4>
+    memberEvaluations.innerHTML = team.students.map(student => {
+        const isCurrentUser = student.name === window.currentUserName;
+        return `
+        <div class="member-evaluation ${isCurrentUser ? 'current-user' : ''}">
+            <h4>${student.name}${isCurrentUser ? ' (You)' : ''}</h4>
             <div class="form-group">
                 <label>Score (out of 10)</label>
                 <input type="number" class="member-score" data-student-id="${student.id}" min="0" max="10" required>
@@ -279,7 +290,8 @@ async function updateMembersList() {
                 <textarea class="member-comment" data-student-id="${student.id}" rows="3" placeholder="Provide individual feedback..."></textarea>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function submitEvaluation(e) {
