@@ -1,0 +1,5 @@
+# nixpacks.toml
+# per https://blog.rayberger.org/coolify-fastapi-uv
+# jchung, 1/2026
+[start]
+cmd = "gunicorn -w 4 -b 0.0.0.0:3000 app:app"
