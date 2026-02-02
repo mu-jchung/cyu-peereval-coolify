@@ -5,3 +5,4 @@ Werkzeug==3.0.1
 pytz
 Flask-Limiter==3.5.0
 Flask-Mail==0.9.1
+gunicorn==25.0.0
